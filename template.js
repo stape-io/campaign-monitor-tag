@@ -5,7 +5,6 @@ const getType = require('getType');
 const JSON = require('JSON');
 const logToConsole = require('logToConsole');
 const makeString = require('makeString');
-const Promise = require('Promise');
 const sendHttpRequest = require('sendHttpRequest');
 const toBase64 = require('toBase64');
 
@@ -68,15 +67,22 @@ function buildSubscriberData(eventData) {
   const eventDataUserData = eventData.user_data || {};
   const autoMap = data.autoMapEventData;
 
-  const name = data.name || (autoMap ? eventData.name || eventDataUserData.name : undefined);
+  const name = data.name || (autoMap ? getNameFromEventData(eventDataUserData) : undefined);
   if (isValidValue(name)) subscriberData.Name = makeString(name);
 
   const mobileNumber =
     data.mobileNumber ||
-    (autoMap ? eventDataUserData.phone_number || eventDataUserData.phone : undefined);
+    (autoMap
+      ? getFirstValidPhoneNumber([
+          eventData.phone,
+          eventData.phone_number,
+          eventDataUserData.phone_number,
+          eventDataUserData.phone
+        ])
+      : undefined);
   if (isValidValue(mobileNumber)) subscriberData.MobileNumber = makeString(mobileNumber);
 
-  if (isValidValue(data.consentToTrack)) subscriberData.ConsentToTrack = data.consentToTrack;
+  subscriberData.ConsentToTrack = data.consentToTrack || 'Unchanged';
   if (isValidValue(data.consentToSendSms)) subscriberData.ConsentToSendSms = data.consentToSendSms;
   if (data.resubscribe) subscriberData.Resubscribe = true;
 
@@ -92,16 +98,32 @@ function resolveEmail(eventData) {
   return (
     data.emailAddress ||
     (autoMap
-      ? eventData.email || eventDataUserData.email || eventDataUserData.email_address
+      ? getFirstUnhashedValue([
+          eventData.email,
+          eventData.email_address,
+          eventDataUserData.email,
+          eventDataUserData.email_address
+        ])
       : undefined)
   );
+}
+
+function getNameFromEventData(eventDataUserData) {
+  let address = eventDataUserData.address;
+  const addressType = getType(address);
+  if (addressType !== 'object' && addressType !== 'array') return;
+  address = address[0] || address;
+
+  return [address.first_name, address.last_name]
+    .filter((namePart) => isValidValue(namePart) && !isHashed(namePart))
+    .join(' ');
 }
 
 function mapCustomFields() {
   if (!data.customFields || !data.customFields.length) return null;
   const customFields = [];
   data.customFields.forEach((row) => {
-    if (isValidValue(row.key)) {
+    if (isValidValue(row.key) && isValidValue(row.value)) {
       customFields.push({ Key: makeString(row.key), Value: makeString(row.value) });
     }
   });
@@ -111,7 +133,7 @@ function mapCustomFields() {
 function performApiCall(path, method, body) {
   apiRequest(path, method, body)
     .then((result) => {
-      const success = result.statusCode >= 200 && result.statusCode < 300;
+      const success = result.statusCode === 200 || result.statusCode === 201;
 
       if (!data.useOptimisticScenario) {
         if (success) data.gtmOnSuccess();
@@ -133,9 +155,7 @@ function apiRequest(path, method, body) {
     method: method
   };
 
-  return body === undefined
-    ? sendHttpRequest(endpoint, requestOptions)
-    : sendHttpRequest(endpoint, requestOptions, JSON.stringify(body));
+  return sendHttpRequest(endpoint, requestOptions, JSON.stringify(body));
 }
 
 /*==============================================================================
@@ -158,6 +178,37 @@ function isValidValue(value) {
   const valueType = getType(value);
   if (valueType === 'null' || valueType === 'undefined' || value !== value) return false;
   return value !== '' && value !== 'undefined' && value !== 'null';
+}
+
+function getFirstUnhashedValue(values) {
+  return values.filter((value) => isValidValue(value) && !isHashed(value))[0];
+}
+
+function getFirstValidPhoneNumber(values) {
+  return values.filter(isValidValue).map(normalizePhoneNumber).filter(isValidValue)[0];
+}
+
+function normalizePhoneNumber(phoneNumber) {
+  phoneNumber = makeString(phoneNumber)
+    .split(' ')
+    .join('')
+    .split('-')
+    .join('')
+    .split('.')
+    .join('')
+    .split('(')
+    .join('')
+    .split(')')
+    .join('');
+  if (isHashed(phoneNumber)) return;
+  if (phoneNumber[0] !== '+') phoneNumber = '+' + phoneNumber;
+  // Campaign Monitor rejects the whole request (error 220) when MobileNumber is not E.164.
+  if (phoneNumber.match('^\\+[1-9][0-9]{1,14}$') === null) return;
+  return phoneNumber;
+}
+
+function isHashed(value) {
+  return makeString(value).match('^[A-Fa-f0-9]{64}$') !== null;
 }
 
 function isConsentGivenOrNotRequired(data, eventData) {

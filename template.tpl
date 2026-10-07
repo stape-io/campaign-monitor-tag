@@ -13,7 +13,7 @@ ___INFO___
   "id": "cvt_temp_public_id",
   "version": 1,
   "securityGroups": [],
-  "displayName": "Campaign Monitor Tag for Google Tag Manager",
+  "displayName": "Campaign Monitor",
   "categories": [
     "ANALYTICS",
     "CONVERSIONS",
@@ -37,8 +37,6 @@ ___TEMPLATE_PARAMETERS___
   {
     "type": "GROUP",
     "name": "configGroup",
-    "displayName": "",
-    "groupStyle": "NO_ZIPPY",
     "subParams": [
       {
         "type": "RADIO",
@@ -104,8 +102,6 @@ ___TEMPLATE_PARAMETERS___
   {
     "type": "GROUP",
     "name": "subscriberDataGroup",
-    "displayName": "",
-    "groupStyle": "NO_ZIPPY",
     "subParams": [
       {
         "type": "TEXT",
@@ -114,32 +110,37 @@ ___TEMPLATE_PARAMETERS___
         "simpleValueType": true,
         "valueValidators": [
           {
-            "type": "NON_EMPTY"
+            "type": "NON_EMPTY",
+            "enablingConditions": [
+              {
+                "paramName": "autoMapEventData",
+                "paramValue": true,
+                "type": "NOT_EQUALS"
+              }
+            ]
           }
         ],
-        "help": "Required. The subscriber\u0027s email address.\u003cbr/\u003e\u003cbr/\u003eFalls back to \u003ci\u003eeventData.email\u003c/i\u003e, then \u003ci\u003eeventData.user_data.email\u003c/i\u003e, then \u003ci\u003eeventData.user_data.email_address\u003c/i\u003e, when left empty and \u003ci\u003eAutomap from Event Data\u003c/i\u003e is enabled."
+        "help": "Required. The subscriber\u0027s email address.\u003cbr/\u003e\u003cbr/\u003eWhen left empty and \u003ci\u003eAutomap from Event Data\u003c/i\u003e is enabled, falls back to the first non-hashed value of:\n\u003cul\u003e\n\u003cli\u003e\u003ci\u003eeventData.email\u003c/i\u003e\u003c/li\u003e\n\u003cli\u003e\u003ci\u003eeventData.email_address\u003c/i\u003e\u003c/li\u003e\n\u003cli\u003e\u003ci\u003eeventData.user_data.email\u003c/i\u003e\u003c/li\u003e\n\u003cli\u003e\u003ci\u003eeventData.user_data.email_address\u003c/i\u003e\u003c/li\u003e\n\u003c/ul\u003e"
       }
     ]
   },
   {
     "type": "GROUP",
     "name": "addOrUpdateFieldsGroup",
-    "displayName": "",
-    "groupStyle": "NO_ZIPPY",
     "subParams": [
       {
         "type": "TEXT",
         "name": "name",
         "displayName": "Name (Optional)",
         "simpleValueType": true,
-        "help": "Falls back to \u003ci\u003eeventData.name\u003c/i\u003e, then \u003ci\u003eeventData.user_data.name\u003c/i\u003e, when left empty and \u003ci\u003eAutomap from Event Data\u003c/i\u003e is enabled."
+        "help": "When left empty and \u003ci\u003eAutomap from Event Data\u003c/i\u003e is enabled, falls back to the non-hashed values of the following, joined by a space:\n\u003cul\u003e\n\u003cli\u003e\u003ci\u003eeventData.user_data.address.first_name\u003c/i\u003e\u003c/li\u003e\n\u003cli\u003e\u003ci\u003eeventData.user_data.address.last_name\u003c/i\u003e\u003c/li\u003e\n\u003c/ul\u003e"
       },
       {
         "type": "TEXT",
         "name": "mobileNumber",
         "displayName": "Mobile Number (Optional)",
         "simpleValueType": true,
-        "help": "Preferably in E.164 format (e.g. +5012398752). Only meaningful together with SMS Consent below.\u003cbr/\u003e\u003cbr/\u003eFalls back to \u003ci\u003eeventData.user_data.phone_number\u003c/i\u003e, then \u003ci\u003eeventData.user_data.phone\u003c/i\u003e, when left empty and \u003ci\u003eAutomap from Event Data\u003c/i\u003e is enabled."
+        "help": "Must be in E.164 format (e.g. +5012398752), otherwise Campaign Monitor rejects the whole request. SMS is only sent when SMS Consent is Yes.\u003cbr/\u003e\u003cbr/\u003eWhen left empty and \u003ci\u003eAutomap from Event Data\u003c/i\u003e is enabled, falls back to the first valid value of the list below. Spaces, dashes, dots and parentheses are removed and a missing + prefix is added. Hashed values and values that are not valid E.164 numbers are skipped.\n\u003cul\u003e\n\u003cli\u003e\u003ci\u003eeventData.phone\u003c/i\u003e\u003c/li\u003e\n\u003cli\u003e\u003ci\u003eeventData.phone_number\u003c/i\u003e\u003c/li\u003e\n\u003cli\u003e\u003ci\u003eeventData.user_data.phone_number\u003c/i\u003e\u003c/li\u003e\n\u003cli\u003e\u003ci\u003eeventData.user_data.phone\u003c/i\u003e\u003c/li\u003e\n\u003c/ul\u003e"
       },
       {
         "type": "SELECT",
@@ -182,6 +183,7 @@ ___TEMPLATE_PARAMETERS___
             "displayValue": "Unchanged"
           }
         ],
+        "notSetText": "Not set",
         "help": "Only meaningful when Mobile Number is set. Leave unset to leave the subscriber\u0027s existing SMS consent untouched."
       },
       {
@@ -189,7 +191,7 @@ ___TEMPLATE_PARAMETERS___
         "name": "resubscribe",
         "checkboxText": "Resubscribe if previously unsubscribed",
         "simpleValueType": true,
-        "help": "By default, adding/updating a subscriber who previously unsubscribed from this list does not change their unsubscribed status. Enable this to resubscribe them."
+        "help": "By default, adding/updating a subscriber who is unsubscribed, inactive or on the suppression list does not re-add them to this list. Enable this to re-add them.\u003cbr/\u003e\u003cbr/\u003eUse with caution: only re-add people who have given permission."
       },
       {
         "type": "SIMPLE_TABLE",
@@ -211,7 +213,12 @@ ___TEMPLATE_PARAMETERS___
             "defaultValue": "",
             "displayName": "Value",
             "name": "value",
-            "type": "TEXT"
+            "type": "TEXT",
+            "valueValidators": [
+              {
+                "type": "NON_EMPTY"
+              }
+            ]
           }
         ],
         "newRowButtonText": "Add custom field",
@@ -263,7 +270,6 @@ const getType = require('getType');
 const JSON = require('JSON');
 const logToConsole = require('logToConsole');
 const makeString = require('makeString');
-const Promise = require('Promise');
 const sendHttpRequest = require('sendHttpRequest');
 const toBase64 = require('toBase64');
 
@@ -326,15 +332,22 @@ function buildSubscriberData(eventData) {
   const eventDataUserData = eventData.user_data || {};
   const autoMap = data.autoMapEventData;
 
-  const name = data.name || (autoMap ? eventData.name || eventDataUserData.name : undefined);
+  const name = data.name || (autoMap ? getNameFromEventData(eventDataUserData) : undefined);
   if (isValidValue(name)) subscriberData.Name = makeString(name);
 
   const mobileNumber =
     data.mobileNumber ||
-    (autoMap ? eventDataUserData.phone_number || eventDataUserData.phone : undefined);
+    (autoMap
+      ? getFirstValidPhoneNumber([
+          eventData.phone,
+          eventData.phone_number,
+          eventDataUserData.phone_number,
+          eventDataUserData.phone
+        ])
+      : undefined);
   if (isValidValue(mobileNumber)) subscriberData.MobileNumber = makeString(mobileNumber);
 
-  if (isValidValue(data.consentToTrack)) subscriberData.ConsentToTrack = data.consentToTrack;
+  subscriberData.ConsentToTrack = data.consentToTrack || 'Unchanged';
   if (isValidValue(data.consentToSendSms)) subscriberData.ConsentToSendSms = data.consentToSendSms;
   if (data.resubscribe) subscriberData.Resubscribe = true;
 
@@ -350,16 +363,32 @@ function resolveEmail(eventData) {
   return (
     data.emailAddress ||
     (autoMap
-      ? eventData.email || eventDataUserData.email || eventDataUserData.email_address
+      ? getFirstUnhashedValue([
+          eventData.email,
+          eventData.email_address,
+          eventDataUserData.email,
+          eventDataUserData.email_address
+        ])
       : undefined)
   );
+}
+
+function getNameFromEventData(eventDataUserData) {
+  let address = eventDataUserData.address;
+  const addressType = getType(address);
+  if (addressType !== 'object' && addressType !== 'array') return;
+  address = address[0] || address;
+
+  return [address.first_name, address.last_name]
+    .filter((namePart) => isValidValue(namePart) && !isHashed(namePart))
+    .join(' ');
 }
 
 function mapCustomFields() {
   if (!data.customFields || !data.customFields.length) return null;
   const customFields = [];
   data.customFields.forEach((row) => {
-    if (isValidValue(row.key)) {
+    if (isValidValue(row.key) && isValidValue(row.value)) {
       customFields.push({ Key: makeString(row.key), Value: makeString(row.value) });
     }
   });
@@ -369,7 +398,7 @@ function mapCustomFields() {
 function performApiCall(path, method, body) {
   apiRequest(path, method, body)
     .then((result) => {
-      const success = result.statusCode >= 200 && result.statusCode < 300;
+      const success = result.statusCode === 200 || result.statusCode === 201;
 
       if (!data.useOptimisticScenario) {
         if (success) data.gtmOnSuccess();
@@ -391,9 +420,7 @@ function apiRequest(path, method, body) {
     method: method
   };
 
-  return body === undefined
-    ? sendHttpRequest(endpoint, requestOptions)
-    : sendHttpRequest(endpoint, requestOptions, JSON.stringify(body));
+  return sendHttpRequest(endpoint, requestOptions, JSON.stringify(body));
 }
 
 /*==============================================================================
@@ -416,6 +443,37 @@ function isValidValue(value) {
   const valueType = getType(value);
   if (valueType === 'null' || valueType === 'undefined' || value !== value) return false;
   return value !== '' && value !== 'undefined' && value !== 'null';
+}
+
+function getFirstUnhashedValue(values) {
+  return values.filter((value) => isValidValue(value) && !isHashed(value))[0];
+}
+
+function getFirstValidPhoneNumber(values) {
+  return values.filter(isValidValue).map(normalizePhoneNumber).filter(isValidValue)[0];
+}
+
+function normalizePhoneNumber(phoneNumber) {
+  phoneNumber = makeString(phoneNumber)
+    .split(' ')
+    .join('')
+    .split('-')
+    .join('')
+    .split('.')
+    .join('')
+    .split('(')
+    .join('')
+    .split(')')
+    .join('');
+  if (isHashed(phoneNumber)) return;
+  if (phoneNumber[0] !== '+') phoneNumber = '+' + phoneNumber;
+  // Campaign Monitor rejects the whole request (error 220) when MobileNumber is not E.164.
+  if (phoneNumber.match('^\\+[1-9][0-9]{1,14}$') === null) return;
+  return phoneNumber;
+}
+
+function isHashed(value) {
+  return makeString(value).match('^[A-Fa-f0-9]{64}$') !== null;
 }
 
 function isConsentGivenOrNotRequired(data, eventData) {
@@ -691,16 +749,20 @@ scenarios:
     assertApi('sendHttpRequest').wasNotCalled();
     assertApi('gtmOnSuccess').wasNotCalled();
     assertApi('gtmOnFailure').wasCalled();
-- name: '[Add or Update Subscriber] Builds the POST body against the list endpoint
-    and omits optional fields when unset'
+- name: '[Add or Update Subscriber] Builds the POST body against the list endpoint,
+    defaults ConsentToTrack to Unchanged and omits optional fields when unset'
   code: |-
     mockData.consentToTrack = undefined;
 
     mock('sendHttpRequest', (url, options, body) => {
       assertThat(url).isEqualTo('https://api.createsend.com/api/v3.3/subscribers/testListId.json');
+      assertThat(options.method).isEqualTo('POST');
 
       const parsedBody = JSON.parse(body);
-      assertThat(parsedBody).isEqualTo({EmailAddress: 'subscriber@example.com'});
+      assertThat(parsedBody).isEqualTo({
+        EmailAddress: 'subscriber@example.com',
+        ConsentToTrack: 'Unchanged'
+      });
 
       return Promise.create((resolve) => resolve({statusCode: 201, body: '{}'}));
     });
@@ -712,13 +774,20 @@ scenarios:
       assertApi('gtmOnFailure').wasNotCalled();
     });
 - name: '[Add or Update Subscriber] Includes Name, Mobile Number, Consent and Resubscribe
-    in the POST body when set'
+    in the POST body when set, with UI values winning over Event Data'
   code: |-
     mockData.name = 'Jane Doe';
     mockData.mobileNumber = '+123456';
     mockData.consentToTrack = 'Yes';
     mockData.consentToSendSms = 'Yes';
     mockData.resubscribe = true;
+
+    mock('getAllEventData', () => ({
+      page_location: 'https://example.com/signup',
+      email: 'eventdata@example.com',
+      phone: '+987654321',
+      user_data: {address: {first_name: 'Event', last_name: 'Data'}}
+    }));
 
     mock('sendHttpRequest', (url, options, body) => {
       const parsedBody = JSON.parse(body);
@@ -741,17 +810,21 @@ scenarios:
       assertApi('gtmOnFailure').wasNotCalled();
     });
 - name: '[Add or Update Subscriber] Falls back to Event Data name and mobile number
-    when Automap from Event Data is enabled'
+    when Automap from Event Data is enabled, normalizing the phone and skipping invalid
+    ones'
   code: |-
     mock('getAllEventData', () => ({
       page_location: 'https://example.com/signup',
-      name: 'Event Data Name',
-      user_data: {phone_number: '+123456789'}
+      user_data: {
+        phone_number: '12345abc',
+        phone: '(123) 456-789',
+        address: [{first_name: 'Jane', last_name: 'Doe'}]
+      }
     }));
 
     mock('sendHttpRequest', (url, options, body) => {
       const parsedBody = JSON.parse(body);
-      assertThat(parsedBody.Name).isEqualTo('Event Data Name');
+      assertThat(parsedBody.Name).isEqualTo('Jane Doe');
       assertThat(parsedBody.MobileNumber).isEqualTo('+123456789');
       return Promise.create((resolve) => resolve({statusCode: 201, body: '{}'}));
     });
@@ -769,8 +842,10 @@ scenarios:
 
     mock('getAllEventData', () => ({
       page_location: 'https://example.com/signup',
-      name: 'Event Data Name',
-      user_data: {phone_number: '+123456789'}
+      user_data: {
+        phone_number: '+123456789',
+        address: {first_name: 'Jane', last_name: 'Doe'}
+      }
     }));
 
     mock('sendHttpRequest', (url, options, body) => {
@@ -793,7 +868,8 @@ scenarios:
       {key: 'website', value: 'https://example.com'},
       {key: 'interests', value: 'magic'},
       {key: 'interests', value: 'romantic walks'},
-      {key: '', value: 'should be skipped'}
+      {key: '', value: 'should be skipped'},
+      {key: 'empty', value: ''}
     ];
 
     mock('sendHttpRequest', (url, options, body) => {
@@ -812,7 +888,86 @@ scenarios:
       assertApi('gtmOnSuccess').wasCalled();
       assertApi('gtmOnFailure').wasNotCalled();
     });
-- name: '[Add or Update Subscriber] Calls gtmOnFailure on a non-2xx API response'
+- name: '[Add or Update Subscriber] Skips hashed Event Data values when automapping
+    email, mobile number and name'
+  code: |-
+    mockData.emailAddress = undefined;
+
+    mock('getAllEventData', () => ({
+      page_location: 'https://example.com/signup',
+      email: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      email_address: 'plain@example.com',
+      phone: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      phone_number: '+123456789',
+      user_data: {
+        email: 'userdata@example.com',
+        phone_number: '+987654321',
+        address: {first_name: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', last_name: 'Doe'}
+      }
+    }));
+
+    mock('sendHttpRequest', (url, options, body) => {
+      const parsedBody = JSON.parse(body);
+      assertThat(parsedBody.EmailAddress).isEqualTo('plain@example.com');
+      assertThat(parsedBody.MobileNumber).isEqualTo('+123456789');
+      assertThat(parsedBody.Name).isEqualTo('Doe');
+      return Promise.create((resolve) => resolve({statusCode: 201, body: '{}'}));
+    });
+
+    runCode(mockData);
+
+    callLater(() => {
+      assertApi('gtmOnSuccess').wasCalled();
+      assertApi('gtmOnFailure').wasNotCalled();
+    });
+- name: '[Add or Update Subscriber] Fails when the only Event Data email is hashed'
+  code: |-
+    mockData.emailAddress = undefined;
+
+    mock('getAllEventData', () => ({
+      page_location: 'https://example.com/signup',
+      user_data: {email: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'}
+    }));
+
+    runCode(mockData);
+
+    assertApi('sendHttpRequest').wasNotCalled();
+    assertApi('gtmOnSuccess').wasNotCalled();
+    assertApi('gtmOnFailure').wasCalled();
+- name: '[Add or Update Subscriber] Omits Name when both Event Data name parts are
+    hashed'
+  code: |-
+    mock('getAllEventData', () => ({
+      page_location: 'https://example.com/signup',
+      user_data: {address: [{first_name: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', last_name: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'}]}
+    }));
+
+    mock('sendHttpRequest', (url, options, body) => {
+      const parsedBody = JSON.parse(body);
+      assertThat(parsedBody.Name).isEqualTo(undefined);
+      return Promise.create((resolve) => resolve({statusCode: 201, body: '{}'}));
+    });
+
+    runCode(mockData);
+
+    callLater(() => {
+      assertApi('gtmOnSuccess').wasCalled();
+      assertApi('gtmOnFailure').wasNotCalled();
+    });
+- name: '[Add or Update Subscriber] Calls gtmOnFailure on a 2xx status other than
+    200 or 201'
+  code: |-
+    mock('sendHttpRequest', () => {
+      return Promise.create((resolve) => resolve({statusCode: 202, body: ''}));
+    });
+
+    runCode(mockData);
+
+    callLater(() => {
+      assertApi('gtmOnSuccess').wasNotCalled();
+      assertApi('gtmOnFailure').wasCalled();
+    });
+- name: '[Add or Update Subscriber] Calls gtmOnFailure on an error API response'
   code: |-
     mock('sendHttpRequest', () => {
       return Promise.create((resolve) =>
@@ -856,10 +1011,11 @@ scenarios:
       assertApi('gtmOnFailure').wasNotCalled();
     });
 - name: '[Unsubscribe Subscriber] Fails when List ID is missing, without making any
-    API call'
+    API call, even with useOptimisticScenario enabled'
   code: |-
     mockData.eventType = 'unsubscribeSubscriber';
     mockData.listId = undefined;
+    mockData.useOptimisticScenario = true;
 
     runCode(mockData);
 
@@ -885,7 +1041,7 @@ scenarios:
     mock('sendHttpRequest', (url, options, body) => {
       assertThat(url).isEqualTo('https://api.createsend.com/api/v3.3/subscribers/testListId/unsubscribe.json');
       assertThat(options.method).isEqualTo('POST');
-      assertThat(options.headers.Authorization.indexOf('Basic ')).isEqualTo(0);
+      assertThat(options.headers.Authorization).isEqualTo('Basic dGVzdEFwaUtleTp4');
 
       const parsedBody = JSON.parse(body);
       assertThat(parsedBody).isEqualTo({EmailAddress: 'subscriber@example.com'});
@@ -899,7 +1055,7 @@ scenarios:
       assertApi('gtmOnSuccess').wasCalled();
       assertApi('gtmOnFailure').wasNotCalled();
     });
-- name: '[Unsubscribe Subscriber] Calls gtmOnFailure on a non-2xx API response'
+- name: '[Unsubscribe Subscriber] Calls gtmOnFailure on an error API response'
   code: |-
     mockData.eventType = 'unsubscribeSubscriber';
 
@@ -993,5 +1149,4 @@ ___NOTES___
   - First release
 
 Created on 09/16/2026, 06:23:09
-
 
