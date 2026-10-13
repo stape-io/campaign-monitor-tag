@@ -1,5 +1,5 @@
 homepage: https://stape.io/
 documentation: https://github.com/stape-io/campaign-monitor-tag
 versions:
-  - sha: '<INITIAL-COMMIT-HASH>'
+  - sha: 'ac2cab763becf02f3bfd783dde25050a00c21a96'
     changeNotes: Initial release.
