@@ -53,3 +53,6 @@ Campaign Monitor identifies Custom (Personalization) Fields by their **key** (e.
 ## Open Source
 
 The **Campaign Monitor tag for GTM Server Side** is developed and maintained by [Stape Team](https://stape.io/) under the Apache 2.0 license.
+
+### GTM Gallery Status
+🔴 Not listed
